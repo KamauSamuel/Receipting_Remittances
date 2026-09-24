@@ -1,0 +1,116 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  DOTNET_VERSION: '10.x'
+  NODE_VERSION: '22.x'
+  buildConfiguration: 'Release'
+
+stages:
+  - stage: Build
+    displayName: 'Build and Test'
+    jobs:
+      - job: BackendBuild
+        displayName: 'Backend Build (.NET)'
+        steps:
+          - checkout: self
+
+          - task: UseDotNet@2
+            displayName: 'Setup .NET'
+            inputs:
+              version: $(DOTNET_VERSION)
+              packageType: 'sdk'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore NuGet packages'
+            inputs:
+              command: 'restore'
+              projects: '**/backend/CleanArchitecture.slnx'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build backend'
+            inputs:
+              command: 'build'
+              projects: '**/backend/CleanArchitecture.slnx'
+              arguments: '--configuration $(buildConfiguration) --no-restore'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Run backend tests'
+            inputs:
+              command: 'test'
+              projects: '**/backend/CleanArchitecture.slnx'
+              arguments: '--configuration $(buildConfiguration) --no-restore --no-build --logger trx --collect:"XPlat Code Coverage"'
+              publishTestResults: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publish code coverage'
+            condition: succeededOrFailed()
+            inputs:
+              summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+              reportDirectory: '$(Agent.TempDirectory)/**/coverage'
+              pathToSources: '$(Build.SourcesDirectory)/backend/src'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Publish backend'
+            inputs:
+              command: 'publish'
+              projects: '**/backend/src/Web.Api/Web.Api.csproj'
+              arguments: '--configuration $(buildConfiguration) --no-restore --no-build -o $(Build.ArtifactStagingDirectory)/backend'
+
+      - job: FrontendBuild
+        displayName: 'Frontend Build (Angular)'
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js'
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Npm@1
+            displayName: 'npm install (frontend)'
+            inputs:
+              command: 'install'
+              workingDir: 'frontend'
+
+          - task: Npm@1
+            displayName: 'npm build (frontend)'
+            inputs:
+              command: 'run'
+              arguments: 'build'
+              workingDir: 'frontend'
+
+          - task: Npm@1
+            displayName: 'npm test (frontend)'
+            condition: succeeded()
+            inputs:
+              command: 'run'
+              arguments: 'test -- --watch=false'
+              workingDir: 'frontend'
+
+          - task: CopyFiles@2
+            displayName: 'Copy frontend dist to staging'
+            inputs:
+              sourceFolder: 'frontend/dist/frontend'
+              targetFolder: '$(Build.ArtifactStagingDirectory)/frontend'
+              cleanTargetFolder: true
+
+  - stage: PublishArtifacts
+    displayName: 'Publish Artifacts'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: PublishJob
+        displayName: 'Publish build artifacts'
+        steps:
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish artifacts'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'receipt-app'
+              publishLocation: 'Container'
