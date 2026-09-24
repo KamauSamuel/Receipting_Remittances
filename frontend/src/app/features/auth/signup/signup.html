@@ -1,0 +1,33 @@
+<div class="signup">
+    <h1>Create an account</h1>
+
+    <form (ngSubmit)="onSubmit()">
+        <label>
+            First name
+            <input type="text" name="firstName" [(ngModel)]="firstName" required autocomplete="given-name" />
+        </label>
+
+        <label>
+            Last name
+            <input type="text" name="lastName" [(ngModel)]="lastName" required autocomplete="family-name" />
+        </label>
+
+        <label>
+            Email
+            <input type="email" name="email" [(ngModel)]="email" required autocomplete="username" />
+        </label>
+
+        <label>
+            Password
+            <input type="password" name="password" [(ngModel)]="password" required autocomplete="new-password" />
+        </label>
+
+        @if (errorMessage()) {
+        <p class="error">{{ errorMessage() }}</p>
+        }
+
+        <button type="submit" [disabled]="isSubmitting()">Sign up</button>
+    </form>
+
+    <p class="switch-auth">Already have an account? <a routerLink="/login">Sign in</a></p>
+</div>

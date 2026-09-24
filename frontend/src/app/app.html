@@ -1,0 +1,11 @@
+<header class="app-header">
+  <span class="app-title">Receipt Portal</span>
+
+  @if (authService.isAuthenticated()) {
+  <button type="button" (click)="onLogout()">Log out</button>
+  }
+</header>
+
+<main>
+  <router-outlet />
+</main>

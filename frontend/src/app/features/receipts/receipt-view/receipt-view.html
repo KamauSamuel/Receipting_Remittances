@@ -1,0 +1,60 @@
+<div class="receipt-view">
+    <h1>Payment Receipts</h1>
+
+    <div class="lookup">
+        <label>
+            Payment Id
+            <input type="text" [(ngModel)]="paymentId" placeholder="00000000-0000-0000-0000-000000000000" />
+        </label>
+
+        <button type="button" (click)="onViewReceipt()" [disabled]="isLoading()">View Receipt</button>
+        <button type="button" (click)="onDownloadPdf()" [disabled]="isDownloading()">Download PDF</button>
+    </div>
+
+    @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+    }
+
+    @if (receipt(); as r) {
+    <table class="receipt">
+        <tbody>
+            <tr>
+                <th>Receipt Number</th>
+                <td>{{ r.receiptNumber }}</td>
+            </tr>
+            <tr>
+                <th>Payee</th>
+                <td>{{ r.payee }}</td>
+            </tr>
+            <tr>
+                <th>Amount</th>
+                <td>{{ r.amount }} {{ r.currency }}</td>
+            </tr>
+            <tr>
+                <th>Payment Date</th>
+                <td>{{ r.paymentDate | date: 'yyyy-MM-dd' }}</td>
+            </tr>
+            <tr>
+                <th>Bank Account</th>
+                <td>{{ r.bankAccount }}</td>
+            </tr>
+            <tr>
+                <th>Remittance Classification</th>
+                <td>{{ r.remittanceClassification }}</td>
+            </tr>
+            <tr>
+                <th>Payment Partner</th>
+                <td>{{ r.paymentPartner }}</td>
+            </tr>
+            <tr>
+                <th>Direction</th>
+                <td>{{ r.direction }}</td>
+            </tr>
+            <tr>
+                <th>Generated At (UTC)</th>
+                <td>{{ r.generatedAtUtc | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+            </tr>
+        </tbody>
+    </table>
+    }
+</div>
